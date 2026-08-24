@@ -4,11 +4,11 @@ import { personas, type Persona } from "@/lib/personas";
 export default function PersonaTabs({ active }: { active: Persona }) {
   return (
     <nav className="border-b border-gold/[0.28]">
-      <ul className="mx-auto flex max-w-[1240px] flex-wrap justify-center gap-10 px-6 sm:px-10">
+      <ul className="mx-auto grid max-w-[1240px] grid-cols-2 gap-x-4 px-6 sm:flex sm:flex-wrap sm:justify-center sm:gap-10 sm:px-10">
         {personas.map((persona) => {
           const isActive = persona.slug === active;
           return (
-            <li key={persona.slug}>
+            <li key={persona.slug} className="text-center">
               <Link
                 href={`/collections/${persona.slug}`}
                 aria-current={isActive ? "page" : undefined}

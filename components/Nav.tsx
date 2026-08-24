@@ -13,6 +13,7 @@ const navLinks = [
 
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const { itemCount, openCart } = useCart();
 
   useEffect(() => {
@@ -76,7 +77,51 @@ export default function Nav() {
               </span>
             )}
           </button>
+
+          <button
+            type="button"
+            onClick={() => setMenuOpen((open) => !open)}
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-expanded={menuOpen}
+            className="relative h-[17px] w-[17px] min-[900px]:hidden"
+          >
+            <span
+              className={`absolute left-0 h-px w-full bg-current transition-transform duration-300 ${
+                menuOpen ? "top-1/2 rotate-45" : "top-[4px] rotate-0"
+              }`}
+            />
+            <span
+              className={`absolute left-0 top-1/2 h-px w-full bg-current transition-opacity duration-300 ${
+                menuOpen ? "opacity-0" : "opacity-100"
+              }`}
+            />
+            <span
+              className={`absolute left-0 h-px w-full bg-current transition-transform duration-300 ${
+                menuOpen ? "top-1/2 -rotate-45" : "top-[13px] rotate-0"
+              }`}
+            />
+          </button>
         </div>
+      </div>
+
+      <div
+        className={`overflow-hidden bg-midnight/[0.96] backdrop-blur-[14px] transition-[max-height,opacity] duration-300 ease-in-out min-[900px]:hidden ${
+          menuOpen ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <ul className="flex flex-col gap-1 border-t border-gold/[0.15] px-6 py-4 sm:px-10">
+          {navLinks.map((link) => (
+            <li key={link.label}>
+              <Link
+                href={link.href}
+                onClick={() => setMenuOpen(false)}
+                className="block py-3 text-[13px] uppercase tracking-[1.8px] text-goldSoft"
+              >
+                {link.label}
+              </Link>
+            </li>
+          ))}
+        </ul>
       </div>
     </nav>
   );
