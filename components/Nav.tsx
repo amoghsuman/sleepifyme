@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 
 const navLinks = [
-  { label: "Shop", href: "#offerings" },
+  { label: "Shop", href: "#personas" },
   { label: "About", href: "/about" },
   { label: "Journal", href: "/journal" },
 ];
