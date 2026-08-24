@@ -2,6 +2,8 @@ import {
   createStorefrontApiClient,
   type StorefrontApiClient,
 } from "@shopify/storefront-api-client";
+import sanitizeHtml from "sanitize-html";
+import { cache } from "react";
 
 let shopifyClient: StorefrontApiClient | null = null;
 
@@ -68,6 +70,19 @@ export type Cart = {
   totalQuantity: number;
   subtotal: Money;
   lines: CartLine[];
+};
+
+export type ShopifyArticle = {
+  id: string;
+  title: string;
+  handle: string;
+  excerpt: string;
+  contentHtml: string;
+  publishedAt: string;
+  tags: string[];
+  image: { url: string; altText: string | null } | null;
+  blogHandle: string;
+  blogTitle: string;
 };
 
 const PRODUCT_FIELDS = `#graphql
@@ -368,7 +383,7 @@ export async function getProducts(): Promise<ShopifyProduct[]> {
   return mapProductEdges(data.products.edges);
 }
 
-export async function getProductByHandle(
+export const getProductByHandle = cache(async function getProductByHandle(
   handle: string
 ): Promise<ShopifyProductDetail | null> {
   const { data, errors } = await getShopifyClient().request(
@@ -403,7 +418,7 @@ export async function getProductByHandle(
       (edge: { node: ShopifyProductVariant }) => edge.node
     ),
   };
-}
+});
 
 export async function getAllProductHandles(first = 250): Promise<string[]> {
   const { data, errors } = await getShopifyClient().request(
@@ -525,4 +540,181 @@ export async function getProductsByTag(
   }
 
   return mapProductEdges(data.products.edges);
+}
+
+const ARTICLE_FIELDS = `#graphql
+  id
+  title
+  handle
+  excerpt
+  contentHtml
+  publishedAt
+  tags
+  image {
+    url
+    altText
+  }
+  blog {
+    handle
+    title
+  }
+`;
+
+const BLOG_ARTICLES_QUERY = `#graphql
+  query GetBlogArticles($handle: String!, $first: Int!) {
+    blog(handle: $handle) {
+      articles(first: $first, sortKey: PUBLISHED_AT, reverse: true) {
+        edges {
+          node {
+            ${ARTICLE_FIELDS}
+          }
+        }
+      }
+    }
+  }
+`;
+
+const ARTICLE_BY_HANDLE_QUERY = `#graphql
+  query GetArticleByHandle($blogHandle: String!, $articleHandle: String!) {
+    blog(handle: $blogHandle) {
+      articleByHandle(handle: $articleHandle) {
+        ${ARTICLE_FIELDS}
+      }
+    }
+  }
+`;
+
+const SANITIZE_OPTIONS: sanitizeHtml.IOptions = {
+  allowedTags: [
+    "p",
+    "br",
+    "hr",
+    "strong",
+    "b",
+    "em",
+    "i",
+    "u",
+    "a",
+    "ul",
+    "ol",
+    "li",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "blockquote",
+    "img",
+    "figure",
+    "figcaption",
+  ],
+  allowedAttributes: {
+    a: ["href", "target", "rel"],
+    img: ["src", "alt", "width", "height"],
+  },
+  allowedSchemes: ["http", "https", "mailto"],
+  exclusiveFilter: (frame) => frame.tag === "img" && !frame.attribs.src,
+  transformTags: {
+    a: sanitizeHtml.simpleTransform("a", {
+      rel: "noopener noreferrer",
+      target: "_blank",
+    }),
+  },
+};
+
+function sanitizeArticleHtml(html: string): string {
+  return sanitizeHtml(html, SANITIZE_OPTIONS);
+}
+
+function deriveExcerpt(html: string, title: string, maxLength = 160): string {
+  let text = sanitizeHtml(html, { allowedTags: [], allowedAttributes: {} })
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (text.toLowerCase().startsWith(title.toLowerCase())) {
+    text = text.slice(title.length).trim();
+  }
+
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength).replace(/\s+\S*$/, "") + "…";
+}
+
+type RawArticle = {
+  id: string;
+  title: string;
+  handle: string;
+  excerpt: string | null;
+  contentHtml: string;
+  publishedAt: string;
+  tags: string[];
+  image: { url: string; altText: string | null } | null;
+  blog: { handle: string; title: string };
+};
+
+function mapArticle(article: RawArticle): ShopifyArticle {
+  return {
+    id: article.id,
+    title: article.title,
+    handle: article.handle,
+    excerpt:
+      article.excerpt?.trim() ||
+      deriveExcerpt(article.contentHtml, article.title),
+    contentHtml: sanitizeArticleHtml(article.contentHtml),
+    publishedAt: article.publishedAt,
+    tags: article.tags,
+    image: article.image,
+    blogHandle: article.blog.handle,
+    blogTitle: article.blog.title,
+  };
+}
+
+export async function getBlogArticles(
+  blogHandle: string,
+  first = 20
+): Promise<ShopifyArticle[]> {
+  const { data, errors } = await getShopifyClient().request(
+    BLOG_ARTICLES_QUERY,
+    { variables: { handle: blogHandle, first } }
+  );
+
+  if (errors) {
+    throw new Error(
+      typeof errors === "string" ? errors : JSON.stringify(errors)
+    );
+  }
+
+  if (!data.blog) return [];
+  return data.blog.articles.edges.map((edge: { node: RawArticle }) =>
+    mapArticle(edge.node)
+  );
+}
+
+export const getArticleByHandle = cache(async function getArticleByHandle(
+  blogHandle: string,
+  articleHandle: string
+): Promise<ShopifyArticle | null> {
+  const { data, errors } = await getShopifyClient().request(
+    ARTICLE_BY_HANDLE_QUERY,
+    { variables: { blogHandle, articleHandle } }
+  );
+
+  if (errors) {
+    throw new Error(
+      typeof errors === "string" ? errors : JSON.stringify(errors)
+    );
+  }
+
+  const article = data.blog?.articleByHandle;
+  if (!article) return null;
+
+  return mapArticle(article);
+});
+
+export function formatArticleDate(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString("en-IN", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 }
