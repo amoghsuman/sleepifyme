@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -11,6 +12,25 @@ import {
 export async function generateStaticParams() {
   const handles = await getAllProductHandles();
   return handles.map((handle) => ({ handle }));
+}
+
+export async function generateMetadata(
+  props: PageProps<"/products/[handle]">
+): Promise<Metadata> {
+  const { handle } = await props.params;
+  const product = await getProductByHandle(handle);
+
+  if (!product) return {};
+
+  return {
+    title: product.title,
+    description: product.description,
+    openGraph: {
+      title: product.title,
+      description: product.description,
+      images: product.images[0] ? [{ url: product.images[0].url }] : undefined,
+    },
+  };
 }
 
 export default async function ProductPage(

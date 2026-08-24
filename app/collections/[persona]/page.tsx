@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
@@ -10,6 +11,24 @@ export const dynamicParams = false;
 
 export function generateStaticParams() {
   return personas.map((persona) => ({ persona: persona.slug }));
+}
+
+export async function generateMetadata(
+  props: PageProps<"/collections/[persona]">
+): Promise<Metadata> {
+  const { persona: personaSlug } = await props.params;
+  const persona = getPersona(personaSlug);
+
+  if (!persona) return {};
+
+  return {
+    title: `Shop ${persona.title}`,
+    description: persona.description,
+    openGraph: {
+      title: `Shop ${persona.title}`,
+      description: persona.description,
+    },
+  };
 }
 
 export default async function CollectionPage(
