@@ -11,4 +11,9 @@ export const AUTH_COOKIES = {
   // Deliberately NOT httpOnly - a presence flag only, so client components
   // (e.g. Nav) can tell whether a session exists without exposing the token.
   loggedInFlag: "shopify_customer_logged_in",
+  // Also deliberately NOT httpOnly - lets the account dropdown render
+  // "Welcome back, X" without an extra client-side API round trip. Low
+  // sensitivity (a first name that's already shown in the page once the
+  // dropdown is open) stored the same way as the login flag above.
+  firstName: "shopify_customer_first_name",
 } as const;

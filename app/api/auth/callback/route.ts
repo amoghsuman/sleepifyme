@@ -3,6 +3,7 @@ import {
   AUTH_COOKIES,
   CUSTOMER_ACCOUNT_CLIENT_ID,
   CUSTOMER_ACCOUNT_ENDPOINTS,
+  getCustomerAccountData,
   getRedirectUri,
 } from "@/lib/customerAuth";
 
@@ -125,6 +126,24 @@ export async function GET(request: NextRequest) {
     path: "/",
     maxAge: tokens.expires_in,
   });
+
+  // Best-effort: grab the customer's first name once at login so the
+  // account dropdown can greet them without its own API round trip. If this
+  // fails for any reason, the login itself still succeeds.
+  const customer = await getCustomerAccountData(tokens.access_token);
+  if (customer?.firstName) {
+    response.cookies.set(
+      AUTH_COOKIES.firstName,
+      encodeURIComponent(customer.firstName),
+      {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        path: "/",
+        maxAge: tokens.expires_in,
+      }
+    );
+  }
 
   response.cookies.delete(AUTH_COOKIES.verifier);
   response.cookies.delete(AUTH_COOKIES.state);

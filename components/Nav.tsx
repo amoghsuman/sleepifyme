@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
-import { AUTH_COOKIES } from "@/lib/authCookies";
+import AccountMenu from "@/components/AccountMenu";
 
 const navLinks = [
   { label: "Shop", href: "#personas" },
@@ -14,7 +14,6 @@ const navLinks = [
 export default function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const { itemCount, openCart } = useCart();
 
   useEffect(() => {
@@ -22,20 +21,6 @@ export default function Nav() {
     onScroll();
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
-
-  useEffect(() => {
-    // Must default to false on the server (no `document`) and only read the
-    // real cookie after mount - reading it in a lazy useState initializer
-    // instead would make the client's first render diverge from the SSR
-    // output whenever a session cookie is actually present, causing a
-    // hydration mismatch on this link's href.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setIsLoggedIn(
-      document.cookie
-        .split("; ")
-        .some((entry) => entry.startsWith(`${AUTH_COOKIES.loggedInFlag}=`))
-    );
   }, []);
 
   return (
@@ -73,15 +58,7 @@ export default function Nav() {
             <circle cx="11" cy="11" r="7" />
             <path d="M21 21l-4.3-4.3" />
           </svg>
-          <Link
-            href={isLoggedIn ? "/account" : "/login"}
-            aria-label={isLoggedIn ? "Your account" : "Sign in"}
-          >
-            <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] fill-none stroke-current stroke-[1.4]">
-              <path d="M20 21a8 8 0 10-16 0" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-          </Link>
+          <AccountMenu />
           <button
             type="button"
             onClick={openCart}
