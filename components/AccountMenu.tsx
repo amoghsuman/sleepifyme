@@ -53,6 +53,7 @@ export default function AccountMenu() {
         aria-label={isLoggedIn ? "Your account" : "Sign in"}
         aria-expanded={isOpen}
         aria-haspopup="true"
+        className="cursor-pointer"
       >
         <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] fill-none stroke-current stroke-[1.4]">
           <path d="M20 21a8 8 0 10-16 0" />

@@ -120,8 +120,10 @@ const PRODUCTS_QUERY = `#graphql
   }
 `;
 
-const PRODUCTS_BY_TAG_QUERY = `#graphql
-  query GetProductsByTag($query: String!, $first: Int!) {
+// Generic filtered-products query, reused by both tag filtering and search -
+// the "query" variable is just Shopify's search syntax either way.
+const PRODUCTS_QUERY_FILTERED = `#graphql
+  query GetProductsFiltered($query: String!, $first: Int!) {
     products(first: $first, query: $query) {
       edges {
         node {
@@ -538,8 +540,38 @@ export async function getProductsByTag(
   first = 20
 ): Promise<ShopifyProduct[]> {
   const { data, errors } = await getShopifyClient().request(
-    PRODUCTS_BY_TAG_QUERY,
+    PRODUCTS_QUERY_FILTERED,
     { variables: { query: `tag:'${tag}'`, first } }
+  );
+
+  if (errors) {
+    throw new Error(
+      typeof errors === "string" ? errors : JSON.stringify(errors)
+    );
+  }
+
+  return mapProductEdges(data.products.edges);
+}
+
+function sanitizeSearchTerm(term: string): string {
+  // Strip characters with special meaning in Shopify's search query syntax
+  // so user input can't accidentally (or deliberately) construct a
+  // different query than "match this text in title/tag".
+  return term.replace(/["\\:*()]/g, "").trim();
+}
+
+export async function searchProducts(
+  term: string,
+  first = 10
+): Promise<ShopifyProduct[]> {
+  const sanitized = sanitizeSearchTerm(term);
+  if (!sanitized) return [];
+
+  const searchQuery = `title:*${sanitized}* OR tag:*${sanitized}*`;
+
+  const { data, errors } = await getShopifyClient().request(
+    PRODUCTS_QUERY_FILTERED,
+    { variables: { query: searchQuery, first } }
   );
 
   if (errors) {

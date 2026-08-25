@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useCart } from "@/context/CartContext";
 import AccountMenu from "@/components/AccountMenu";
+import SearchOverlay from "@/components/SearchOverlay";
 
 const navLinks = [
   { label: "Shop", href: "#personas" },
@@ -54,16 +55,13 @@ export default function Nav() {
         </ul>
 
         <div className="flex items-center gap-[22px] text-goldSoft">
-          <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] fill-none stroke-current stroke-[1.4]">
-            <circle cx="11" cy="11" r="7" />
-            <path d="M21 21l-4.3-4.3" />
-          </svg>
+          <SearchOverlay />
           <AccountMenu />
           <button
             type="button"
             onClick={openCart}
             aria-label="Open cart"
-            className="relative"
+            className="relative cursor-pointer"
           >
             <svg viewBox="0 0 24 24" className="h-[17px] w-[17px] fill-none stroke-current stroke-[1.4]">
               <path d="M3 6h18M6 6l1 14h10l1-14M9 6V4a3 3 0 016 0v2" />
@@ -80,7 +78,7 @@ export default function Nav() {
             onClick={() => setMenuOpen((open) => !open)}
             aria-label={menuOpen ? "Close menu" : "Open menu"}
             aria-expanded={menuOpen}
-            className="relative h-[17px] w-[17px] min-[900px]:hidden"
+            className="relative h-[17px] w-[17px] cursor-pointer min-[900px]:hidden"
           >
             <span
               className={`absolute left-0 h-px w-full bg-current transition-transform duration-300 ${
