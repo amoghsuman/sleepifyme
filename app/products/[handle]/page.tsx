@@ -3,6 +3,10 @@ import { notFound } from "next/navigation";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
 import AddToCartButton from "@/components/AddToCartButton";
+import ProductGallery from "@/components/ProductGallery";
+import ProductDetailGrid from "@/components/ProductDetailGrid";
+import ProductFAQ from "@/components/ProductFAQ";
+import ReviewQuote from "@/components/ReviewQuote";
 import {
   formatPrice,
   getAllProductHandles,
@@ -51,18 +55,7 @@ export default async function ProductPage(
       <Nav />
       <main className="min-h-screen bg-midnight pt-[86px]">
         <div className="mx-auto grid max-w-[1240px] grid-cols-1 gap-16 px-6 py-20 sm:px-10 lg:grid-cols-2 lg:gap-24 lg:py-28">
-          <div className="flex aspect-[4/5] items-center justify-center border border-gold/[0.15] bg-[linear-gradient(155deg,#101a3a_0%,#0A1128_55%,#070B1E_100%)]">
-            <svg
-              viewBox="0 0 100 100"
-              fill="none"
-              className="h-2/5 w-2/5 stroke-gold opacity-90"
-              strokeWidth={0.6}
-            >
-              <path d="M20 58 Q50 38 80 58 L80 74 Q50 90 20 74 Z" />
-              <path d="M20 58 Q50 74 80 58" />
-              <path d="M28 64 Q50 76 72 64" opacity={0.6} />
-            </svg>
-          </div>
+          <ProductGallery images={product.images} productTitle={product.title} />
 
           <div>
             <h1 className="font-display text-[clamp(30px,3.6vw,44px)] font-medium leading-[1.15] text-parchment">
@@ -105,6 +98,14 @@ export default async function ProductPage(
           </div>
         </div>
       </main>
+
+      <ProductDetailGrid />
+      <ProductFAQ whatsInsideAnswer={product.description} />
+      <ReviewQuote
+        quote="The first product that actually changed how I sleep, not just another blanket in a box."
+        author="Verified Buyer"
+      />
+
       <Footer />
     </>
   );

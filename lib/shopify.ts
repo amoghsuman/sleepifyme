@@ -48,8 +48,15 @@ export type ShopifyProductDetail = {
   description: string;
   price: Money;
   compareAtPrice: Money | null;
-  images: { url: string; altText: string | null }[];
+  images: ProductImage[];
   variants: ShopifyProductVariant[];
+};
+
+export type ProductImage = {
+  url: string;
+  altText: string | null;
+  width: number;
+  height: number;
 };
 
 export type CartLine = {
@@ -149,6 +156,8 @@ const PRODUCT_BY_HANDLE_QUERY = `#graphql
           node {
             url
             altText
+            width
+            height
           }
         }
       }
@@ -412,7 +421,7 @@ export const getProductByHandle = cache(async function getProductByHandle(
     price: product.priceRange.minVariantPrice,
     compareAtPrice: hasDiscount ? compareAtPrice : null,
     images: product.images.edges.map(
-      (edge: { node: { url: string; altText: string | null } }) => edge.node
+      (edge: { node: ProductImage }) => edge.node
     ),
     variants: product.variants.edges.map(
       (edge: { node: ShopifyProductVariant }) => edge.node
