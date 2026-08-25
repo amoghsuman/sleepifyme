@@ -105,9 +105,14 @@ export async function GET(request: NextRequest) {
   }
 
   if (tokens.id_token) {
+    // Match the access token's lifetime, not an arbitrary long window - the
+    // id_token JWT itself carries a short internal `exp` claim (Shopify
+    // doesn't publish it separately from expires_in), and sending a stale
+    // id_token as id_token_hint at logout is a plausible way for Shopify to
+    // silently distrust it and fall back to a default redirect.
     response.cookies.set(AUTH_COOKIES.idToken, tokens.id_token, {
       ...secureCookie,
-      maxAge: 60 * 60 * 24 * 30,
+      maxAge: tokens.expires_in,
     });
   }
 
